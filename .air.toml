@@ -1,0 +1,13 @@
+root = "."
+tmp_dir = "tmp"
+
+[build]
+  cmd = "go build -o tmp/main.exe ./cmd/main.go"
+  bin = "tmp/main.exe"
+  entrypoint = ["cmd", "/c", "tmp\\main.exe"]
+  include_ext = ["go", "tpl", "html"]
+  exclude_dir = ["tmp", "vendor","vendor", "testdata"]
+  delay = 1000
+  exclude_regex = ["_test.go"]
+  exclude_unchanged = false
+  log = "build-errors.log"
