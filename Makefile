@@ -28,9 +28,9 @@ clean:
 
 migrate-up:
 	@echo "Migrating up"
-	@bash -c 'source .env && goose -dir sql/migrations $$GOOSE_DRIVER $$GOOSE_DBSTRING up'
-
+	@bash -c 'export $$(grep -v "^#" .env | tr -d "\r" | xargs) && GOOSE_DRIVER=postgres goose -dir sql/migrations up'
 
 migrate-down:
-	@echo "Migrating down"
-	@bash -c 'source .env && goose -dir sql/migrations $$GOOSE_DRIVER $$GOOSE_DBSTRING down'
+	@echo "Migrating up"
+	@bash -c 'export $$(grep -v "^#" .env | tr -d "\r" | xargs) && GOOSE_DRIVER=postgres goose -dir sql/migrations down'
+	
