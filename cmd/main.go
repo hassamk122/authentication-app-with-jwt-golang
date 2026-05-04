@@ -3,9 +3,16 @@ package main
 import (
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 
 	"github.com/hassamk122/authentication-app-with-jwt-golang/config"
+	transaction "github.com/hassamk122/authentication-app-with-jwt-golang/internals/Transaction"
+	"github.com/hassamk122/authentication-app-with-jwt-golang/internals/handlers"
+	"github.com/hassamk122/authentication-app-with-jwt-golang/internals/repo"
+	"github.com/hassamk122/authentication-app-with-jwt-golang/internals/routes"
+	"github.com/hassamk122/authentication-app-with-jwt-golang/internals/services"
+	"github.com/hassamk122/authentication-app-with-jwt-golang/internals/store"
 )
 
 func main() {
@@ -18,8 +25,30 @@ func main() {
 	db := config.ConnectToDB(configuration.DatabaseUrl)
 	defer db.Close()
 
-	fmt.Printf("server port: %s\n", configuration.ServerPort)
-	fmt.Printf("Database url: %s\n", configuration.DatabaseUrl)
-	fmt.Printf("environment: %s\n", configuration.Environment)
+	queries := store.New(db)
 
+	txManager := transaction.NewTxManager(db)
+
+	userRepo := repo.NewUserRepo(queries)
+
+	userService := services.NewUserService(txManager, userRepo)
+
+	handler := handlers.NewHandler(userService)
+
+	mux := http.NewServeMux()
+
+	routes.SetupRoutes(mux, handler)
+
+	serverAddr := fmt.Sprintf(":%s", configuration.ServerPort)
+
+	server := &http.Server{
+		Addr:    serverAddr,
+		Handler: mux,
+	}
+
+	log.Printf("Starting server on Port: %s", serverAddr)
+
+	if err := server.ListenAndServe(); err != nil {
+		log.Fatalf("Server failed. Reason: %v", err)
+	}
 }
