@@ -9,6 +9,7 @@ import (
 
 type UserRepo interface {
 	CreateUser(ctx context.Context, arg store.CreateUserParams) (store.CreateUserRow, error)
+	GetEmailByUser(ctx context.Context, email string) (store.GetUserByEmailRow, error)
 }
 
 type userRepo struct {
@@ -24,4 +25,8 @@ func NewUserRepo(q *store.Queries) *userRepo {
 
 func (ur *userRepo) CreateUser(ctx context.Context, arg store.CreateUserParams) (store.CreateUserRow, error) {
 	return ur.queries.CreateUser(ctx, arg)
+}
+
+func (ur *userRepo) GetEmailByUser(ctx context.Context, email string) (store.GetUserByEmailRow, error) {
+	return ur.queries.GetUserByEmail(ctx, email)
 }

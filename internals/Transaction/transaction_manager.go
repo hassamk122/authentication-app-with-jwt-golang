@@ -8,7 +8,7 @@ import (
 )
 
 type TxManager interface {
-	WithTx(ctx context.Context, fn func(*store.Queries) error) error
+	StartTransaction(ctx context.Context, fn func(*store.Queries) error) (*store.Queries, error)
 }
 
 type txManager struct {
@@ -21,10 +21,10 @@ func NewTxManager(db *sql.DB) *txManager {
 	}
 }
 
-func (tm *txManager) WithTx(ctx context.Context, fn func(*store.Queries) error) error {
+func (tm *txManager) StartTransaction(ctx context.Context, fn func(*store.Queries) error) (*store.Queries, error) {
 	tx, err := tm.Db.BeginTx(ctx, nil)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	qtx := store.New(tx)
@@ -32,8 +32,8 @@ func (tm *txManager) WithTx(ctx context.Context, fn func(*store.Queries) error) 
 	err = fn(qtx)
 	if err != nil {
 		tx.Rollback()
-		return err
+		return nil, err
 	}
 
-	return tx.Commit()
+	return qtx, tx.Commit()
 }
