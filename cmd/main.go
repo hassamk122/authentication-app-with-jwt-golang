@@ -28,11 +28,13 @@ func main() {
 
 	queries := store.New(db)
 
-	txManager := transaction.NewTxManager(db)
-
 	userRepo := repo.NewUserRepo(queries)
 
-	userService := services.NewUserService(txManager, userRepo)
+	verificationCodeRepo := repo.NewVerificationCodeRepo(queries)
+
+	txManager := transaction.NewTxManager[any](db)
+
+	userService := services.NewUserService(*txManager, userRepo, verificationCodeRepo)
 
 	handler := handlers.NewHandler(userService)
 

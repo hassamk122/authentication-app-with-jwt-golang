@@ -30,6 +30,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.getUserByEmailStmt, err = db.PrepareContext(ctx, getUserByEmail); err != nil {
 		return nil, fmt.Errorf("error preparing query GetUserByEmail: %w", err)
 	}
+	if q.saveVerificationCodeStmt, err = db.PrepareContext(ctx, saveVerificationCode); err != nil {
+		return nil, fmt.Errorf("error preparing query SaveVerificationCode: %w", err)
+	}
 	return &q, nil
 }
 
@@ -43,6 +46,11 @@ func (q *Queries) Close() error {
 	if q.getUserByEmailStmt != nil {
 		if cerr := q.getUserByEmailStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing getUserByEmailStmt: %w", cerr)
+		}
+	}
+	if q.saveVerificationCodeStmt != nil {
+		if cerr := q.saveVerificationCodeStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing saveVerificationCodeStmt: %w", cerr)
 		}
 	}
 	return err
@@ -82,17 +90,19 @@ func (q *Queries) queryRow(ctx context.Context, stmt *sql.Stmt, query string, ar
 }
 
 type Queries struct {
-	db                 DBTX
-	tx                 *sql.Tx
-	createUserStmt     *sql.Stmt
-	getUserByEmailStmt *sql.Stmt
+	db                       DBTX
+	tx                       *sql.Tx
+	createUserStmt           *sql.Stmt
+	getUserByEmailStmt       *sql.Stmt
+	saveVerificationCodeStmt *sql.Stmt
 }
 
 func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 	return &Queries{
-		db:                 tx,
-		tx:                 tx,
-		createUserStmt:     q.createUserStmt,
-		getUserByEmailStmt: q.getUserByEmailStmt,
+		db:                       tx,
+		tx:                       tx,
+		createUserStmt:           q.createUserStmt,
+		getUserByEmailStmt:       q.getUserByEmailStmt,
+		saveVerificationCodeStmt: q.saveVerificationCodeStmt,
 	}
 }

@@ -2,7 +2,6 @@ package validation
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/go-playground/validator/v10"
 )
@@ -10,15 +9,26 @@ import (
 var validate = validator.New()
 
 func Validate(i any) error {
+
 	err := validate.Struct(i)
+
 	if err != nil {
-		var errMsgs []string
+		var errMsgs string
 
 		for _, e := range err.(validator.ValidationErrors) {
-			errMsgs = append(errMsgs, fmt.Sprintf("%s is required", strings.ToLower(e.Field())))
+			switch e.Field() {
+			case "Name":
+				errMsgs = "Name must be between 2 and 50 characters"
+				return fmt.Errorf("%s", errMsgs)
+			case "Email":
+				errMsgs = "Must be a valid email address"
+				return fmt.Errorf("%s", errMsgs)
+			case "Password":
+				errMsgs = "Password must be at least 8 characters"
+				return fmt.Errorf("%s", errMsgs)
+			}
 		}
 
-		return fmt.Errorf("%s", strings.Join(errMsgs, ", "))
 	}
 
 	return nil

@@ -5,6 +5,7 @@ import (
 	"log"
 
 	transaction "github.com/hassamk122/authentication-app-with-jwt-golang/internals/Transaction"
+	"github.com/hassamk122/authentication-app-with-jwt-golang/internals/_types"
 	"github.com/hassamk122/authentication-app-with-jwt-golang/internals/errs"
 	"github.com/hassamk122/authentication-app-with-jwt-golang/internals/repo"
 	"github.com/hassamk122/authentication-app-with-jwt-golang/internals/store"
@@ -16,28 +17,31 @@ type UserService interface {
 }
 
 type userService struct {
-	TransactionManager transaction.TxManager
-	UserRepo           repo.UserRepo
+	TxManager            transaction.TxManager[any]
+	UserRepo             repo.UserRepo
+	verificationCodeRepo repo.VerificationCodeRepo
 }
 
-func NewUserService(tx transaction.TxManager, userRepo repo.UserRepo) *userService {
+func NewUserService(TxManager transaction.TxManager[any], userRepo repo.UserRepo, verificationCodeRepo repo.VerificationCodeRepo) *userService {
 	return &userService{
-		TransactionManager: tx,
-		UserRepo:           userRepo,
+		TxManager:            TxManager,
+		UserRepo:             userRepo,
+		verificationCodeRepo: verificationCodeRepo,
 	}
 }
 
 func (s *userService) Register(ctx context.Context, username, email, password string) error {
-	_, err := s.TransactionManager.StartTransaction(ctx,
-		func(qtx *store.Queries) error {
-			repo := repo.NewUserRepo(qtx)
+	_, err := s.TxManager.StartTransaction(ctx,
+		func(qtx *store.Queries) (any, error) {
+			userRepo := repo.NewUserRepo(qtx)
+			verificationCodeRepo := repo.NewVerificationCodeRepo(qtx)
 
 			log.Println("Checking if email already exists (service layer)")
 
-			_, err := repo.GetEmailByUser(ctx, email)
+			_, err := userRepo.GetEmailByUser(ctx, email)
 			if err == nil {
 				log.Println("email already exists (service layer)")
-				return errs.ErrEmailTaken
+				return nil, errs.ErrEmailTaken
 			}
 
 			log.Println("Email does not exists hashing password (service layer)")
@@ -45,18 +49,26 @@ func (s *userService) Register(ctx context.Context, username, email, password st
 			hashedPassword, err := utils.HashPassword(password)
 			if err != nil {
 				log.Println("hashing failed (service layer)")
-				return err
+				return nil, err
 			}
 
 			log.Println("hashed password, trying to save user to db (service layer)")
 
-			_, err = repo.CreateUser(ctx, store.CreateUserParams{
+			user, err := userRepo.CreateUser(ctx, store.CreateUserParams{
 				Username: username,
 				Email:    email,
 				Password: hashedPassword,
 			})
 
-			return err
+			verificationCode, err := verificationCodeRepo.SaveVerificationCodeUser(ctx, store.SaveVerificationCodeParams{
+				UserID:          int32(user.PublicID.ID()),
+				VerficationType: _types.EmailVerification,
+				// ExpiresAt:       "",
+			})
+
+			log.Println(verificationCode)
+
+			return user, err
 		})
 
 	return err

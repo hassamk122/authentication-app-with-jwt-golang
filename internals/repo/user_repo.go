@@ -2,7 +2,6 @@ package repo
 
 import (
 	"context"
-	"database/sql"
 
 	"github.com/hassamk122/authentication-app-with-jwt-golang/internals/store"
 )
@@ -13,7 +12,6 @@ type UserRepo interface {
 }
 
 type userRepo struct {
-	Db      *sql.DB
 	queries *store.Queries
 }
 

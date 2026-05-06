@@ -19,3 +19,10 @@ type User struct {
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
+
+type VerificationCode struct {
+	UserID          int32     `json:"user_id"`
+	VerficationType string    `json:"verfication_type"`
+	CreatedAt       time.Time `json:"created_at"`
+	ExpiresAt       time.Time `json:"expires_at"`
+}

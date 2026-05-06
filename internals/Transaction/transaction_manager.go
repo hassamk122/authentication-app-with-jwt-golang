@@ -1,4 +1,4 @@
-package transaction
+package transactions
 
 import (
 	"context"
@@ -7,33 +7,34 @@ import (
 	"github.com/hassamk122/authentication-app-with-jwt-golang/internals/store"
 )
 
-type TxManager interface {
-	StartTransaction(ctx context.Context, fn func(*store.Queries) error) (*store.Queries, error)
-}
-
-type txManager struct {
+type TxManager[T any] struct {
 	Db *sql.DB
 }
 
-func NewTxManager(db *sql.DB) *txManager {
-	return &txManager{
+func NewTxManager[T any](db *sql.DB) *TxManager[T] {
+	return &TxManager[T]{
 		Db: db,
 	}
 }
 
-func (tm *txManager) StartTransaction(ctx context.Context, fn func(*store.Queries) error) (*store.Queries, error) {
+func (tm *TxManager[T]) StartTransaction(ctx context.Context, fn func(*store.Queries) (T, error)) (res T, err error) {
 	tx, err := tm.Db.BeginTx(ctx, nil)
 	if err != nil {
-		return nil, err
+		return res, err
 	}
+
+	defer func() {
+		if p := recover(); p != nil {
+			_ = tx.Rollback()
+			panic(p)
+		} else if err != nil {
+			_ = tx.Rollback()
+		} else {
+			err = tx.Commit()
+		}
+	}()
 
 	qtx := store.New(tx)
-
-	err = fn(qtx)
-	if err != nil {
-		tx.Rollback()
-		return nil, err
-	}
-
-	return qtx, tx.Commit()
+	res, err = fn(qtx)
+	return res, err
 }
