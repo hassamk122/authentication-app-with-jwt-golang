@@ -1,0 +1,7 @@
+CREATE TABLE IF NOT EXISTS user_sessions(
+    id UUID DEFAULT uuid_generate_v4() NOT NULL UNIQUE,
+    user_id UUID NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(public_id) ON DELETE CASCADE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    expires_at TIMESTAMP NOT NULL
+);

@@ -20,6 +20,13 @@ type User struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
+type UserSession struct {
+	ID        uuid.UUID `json:"id"`
+	UserID    uuid.UUID `json:"user_id"`
+	CreatedAt time.Time `json:"created_at"`
+	ExpiresAt time.Time `json:"expires_at"`
+}
+
 type VerificationCode struct {
 	UserID          int32     `json:"user_id"`
 	VerficationType string    `json:"verfication_type"`

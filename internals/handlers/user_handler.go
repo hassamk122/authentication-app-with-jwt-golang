@@ -33,14 +33,14 @@ func (h *Handler) CreateUserHandler() http.HandlerFunc {
 
 		log.Println("Valid request passing to service (handler layer)")
 
-		err := h.UserService.Register(ctx, userReq.Username, userReq.Email, userReq.Email)
+		registerInfo, err := h.UserService.Register(ctx, userReq.Username, userReq.Email, userReq.Email)
 		if errors.Is(err, errs.ErrEmailTaken) {
 			log.Println("Email already taken (handler layer)")
 			utils.RespondWithError(res, http.StatusConflict, "Email already taken")
 			return
 		}
 
-		log.Println("Email not taken (handler layer)")
+		log.Println("Email not taken (handler layer)", registerInfo)
 
 		if err != nil {
 			log.Println("Something went wrong  (handler layer)")

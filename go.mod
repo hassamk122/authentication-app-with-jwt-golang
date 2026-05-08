@@ -3,6 +3,7 @@ module github.com/hassamk122/authentication-app-with-jwt-golang
 go 1.26.2
 
 require (
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/go-playground/validator/v10 v10.30.2
 	github.com/google/uuid v1.6.0
 	github.com/joho/godotenv v1.5.1

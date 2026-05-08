@@ -32,9 +32,11 @@ func main() {
 
 	verificationCodeRepo := repo.NewVerificationCodeRepo(queries)
 
+	userSessionRepo := repo.NewVerificationCodeRepo(queries)
+
 	txManager := transaction.NewTxManager[any](db)
 
-	userService := services.NewUserService(*txManager, userRepo, verificationCodeRepo)
+	userService := services.NewUserService(*txManager, userRepo, verificationCodeRepo, userSessionRepo)
 
 	handler := handlers.NewHandler(userService)
 

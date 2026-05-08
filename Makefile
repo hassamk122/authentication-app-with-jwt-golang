@@ -31,6 +31,6 @@ migrate-up:
 	@bash -c 'export $$(grep -v "^#" .env | tr -d "\r" | xargs) && GOOSE_DRIVER=postgres goose -dir sql/migrations up'
 
 migrate-down:
-	@echo "Migrating up"
+	@echo "Migrating down"
 	@bash -c 'export $$(grep -v "^#" .env | tr -d "\r" | xargs) && GOOSE_DRIVER=postgres goose -dir sql/migrations down'
 	
