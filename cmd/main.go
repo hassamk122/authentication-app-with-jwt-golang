@@ -32,7 +32,7 @@ func main() {
 
 	verificationCodeRepo := repo.NewVerificationCodeRepo(queries)
 
-	userSessionRepo := repo.NewVerificationCodeRepo(queries)
+	userSessionRepo := repo.NewUserSessionRepo(queries)
 
 	txManager := transaction.NewTxManager[any](db)
 
