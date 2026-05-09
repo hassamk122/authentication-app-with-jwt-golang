@@ -7,18 +7,24 @@ package store
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 )
 
 const createUserSession = `-- name: CreateUserSession :one
-INSERT INTO user_sessions(user_id)
-VALUES ($1)
+INSERT INTO user_sessions(user_id,expires_at)
+VALUES ($1,$2)
 RETURNING id,user_id,created_at, expires_at
 `
 
-func (q *Queries) CreateUserSession(ctx context.Context, userID uuid.UUID) (UserSession, error) {
-	row := q.queryRow(ctx, q.createUserSessionStmt, createUserSession, userID)
+type CreateUserSessionParams struct {
+	UserID    uuid.UUID `json:"user_id"`
+	ExpiresAt time.Time `json:"expires_at"`
+}
+
+func (q *Queries) CreateUserSession(ctx context.Context, arg CreateUserSessionParams) (UserSession, error) {
+	row := q.queryRow(ctx, q.createUserSessionStmt, createUserSession, arg.UserID, arg.ExpiresAt)
 	var i UserSession
 	err := row.Scan(
 		&i.ID,

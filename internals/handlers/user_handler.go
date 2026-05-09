@@ -40,17 +40,21 @@ func (h *Handler) CreateUserHandler() http.HandlerFunc {
 			return
 		}
 
-		log.Println("Email not taken (handler layer)", registerInfo)
+		log.Println("Email not taken (handler layer)")
 
 		if err != nil {
-			log.Println("Something went wrong  (handler layer)")
+			log.Println("Something went wrong  (handler layer)", err)
 			utils.RespondWithError(res, http.StatusInternalServerError, "Error creating user")
 			return
 		}
 
 		log.Println("No errors found in registering (handler layer)")
 
-		utils.RespondWithSuccess(res, http.StatusCreated, "User created successfully", nil)
+		utils.SetAuthCookies(res, registerInfo.(dtos.RegisterInfo))
+
+		log.Println("Cookies set (handler layer)")
+
+		utils.RespondWithSuccess(res, http.StatusCreated, "User created successfully", registerInfo)
 
 	}
 }

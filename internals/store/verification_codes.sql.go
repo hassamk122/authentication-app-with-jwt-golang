@@ -8,6 +8,8 @@ package store
 import (
 	"context"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 const saveVerificationCode = `-- name: SaveVerificationCode :one
@@ -17,7 +19,7 @@ RETURNING user_id,verfication_type, created_at, expires_at
 `
 
 type SaveVerificationCodeParams struct {
-	UserID          int32     `json:"user_id"`
+	UserID          uuid.UUID `json:"user_id"`
 	VerficationType string    `json:"verfication_type"`
 	ExpiresAt       time.Time `json:"expires_at"`
 }

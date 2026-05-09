@@ -3,11 +3,12 @@ package services
 import (
 	"context"
 	"log"
-	"os"
 	"time"
 
+	"github.com/google/uuid"
 	transaction "github.com/hassamk122/authentication-app-with-jwt-golang/internals/Transaction"
 	"github.com/hassamk122/authentication-app-with-jwt-golang/internals/_types"
+	"github.com/hassamk122/authentication-app-with-jwt-golang/internals/dtos"
 	"github.com/hassamk122/authentication-app-with-jwt-golang/internals/errs"
 	"github.com/hassamk122/authentication-app-with-jwt-golang/internals/repo"
 	"github.com/hassamk122/authentication-app-with-jwt-golang/internals/store"
@@ -53,7 +54,7 @@ func (s *userService) Register(ctx context.Context, username, email, password st
 			}
 
 			verificationCode, err := verificationCodeRepo.SaveVerificationCodeUser(ctx, store.SaveVerificationCodeParams{
-				UserID:          int32(user.PublicID.ID()),
+				UserID:          user.PublicID,
 				VerficationType: _types.EmailVerification,
 				ExpiresAt:       time.Now().AddDate(1, 0, 0),
 			})
@@ -63,36 +64,16 @@ func (s *userService) Register(ctx context.Context, username, email, password st
 
 			log.Println("Verification Code generated (service layer)", verificationCode)
 
-			session, err := userSessionRepo.CreateUserSession(ctx, user.PublicID)
+			tokens, err := SaveSessionAndGenerateTokens(ctx, user.PublicID, userSessionRepo)
 			if err != nil {
 				return nil, err
 			}
 
-			log.Println("Sessions  added(service layer)")
-
-			jwtKey := []byte(os.Getenv("JWT_SECRET_KEY"))
-
-			refreshToken, err := utils.GenerateRefreshToken(session.ID, jwtKey)
-			if err != nil {
-				return nil, err
-			}
-
-			accessToken, err := utils.GenerateAccessToken(user.PublicID, session.ID, jwtKey)
-			if err != nil {
-				return nil, err
-			}
-
-			registerInfo := struct {
-				user         *store.CreateUserRow
-				accessToken  string
-				refreshToken string
-			}{
-				user:         user,
-				accessToken:  accessToken,
-				refreshToken: refreshToken,
-			}
-
-			return registerInfo, err
+			return dtos.RegisterInfo{
+				User:         user,
+				RefreshToken: tokens.RefreshToken,
+				AccessToken:  tokens.RefreshToken,
+			}, err
 		})
 
 	if err != nil {
@@ -100,6 +81,34 @@ func (s *userService) Register(ctx context.Context, username, email, password st
 	}
 
 	return registerInfo, err
+}
+
+func SaveSessionAndGenerateTokens(ctx context.Context, userID uuid.UUID, userSessionRepo repo.UserSessionRepo) (*utils.Tokens, error) {
+	sessionID, err := CreateSession(ctx, userID, userSessionRepo)
+	if err != nil {
+		return nil, err
+	}
+
+	log.Println("Session added to db (service layer)")
+
+	tokens, err := utils.GenerateTokens(sessionID, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	return tokens, err
+}
+
+func CreateSession(ctx context.Context, userID uuid.UUID, userSessionRepo repo.UserSessionRepo) (uuid.UUID, error) {
+	session, err := userSessionRepo.CreateUserSession(ctx, store.CreateUserSessionParams{
+		UserID:    userID,
+		ExpiresAt: time.Now().AddDate(0, 1, 0),
+	})
+	if err != nil {
+		return uuid.UUID{}, err
+	}
+
+	return session.ID, nil
 }
 
 func verifyAndSaveUser(ctx context.Context, userRepo repo.UserRepo, username, email, password string) (*store.CreateUserRow, error) {

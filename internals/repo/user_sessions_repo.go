@@ -3,12 +3,11 @@ package repo
 import (
 	"context"
 
-	"github.com/google/uuid"
 	"github.com/hassamk122/authentication-app-with-jwt-golang/internals/store"
 )
 
 type UserSessionRepo interface {
-	CreateUserSession(ctx context.Context, userID uuid.UUID) (store.UserSession, error)
+	CreateUserSession(ctx context.Context, arg store.CreateUserSessionParams) (store.UserSession, error)
 }
 
 type userSessionsRepo struct {
@@ -21,6 +20,6 @@ func NewUserSessionRepo(q *store.Queries) *userSessionsRepo {
 	}
 }
 
-func (usr *userSessionsRepo) CreateUserSession(ctx context.Context, userID uuid.UUID) (store.UserSession, error) {
-	return usr.queries.CreateUserSession(ctx, userID)
+func (usr *userSessionsRepo) CreateUserSession(ctx context.Context, arg store.CreateUserSessionParams) (store.UserSession, error) {
+	return usr.queries.CreateUserSession(ctx, arg)
 }
