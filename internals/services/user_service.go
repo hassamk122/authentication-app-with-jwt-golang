@@ -41,7 +41,7 @@ func NewUserService(
 }
 
 func (s *userService) Register(ctx context.Context, username, email, password string) (dtos.RegisterInfo, error) {
-	registerInfo, err := transaction.StartTransaction[dtos.RegisterInfo](ctx, &s.TxManager,
+	registerInfo, err := transaction.StartTransaction(ctx, &s.TxManager,
 		func(qtx *store.Queries) (dtos.RegisterInfo, error) {
 			userRepo := repo.NewUserRepo(qtx)
 			verificationCodeRepo := repo.NewVerificationCodeRepo(qtx)
@@ -85,39 +85,14 @@ func (s *userService) Register(ctx context.Context, username, email, password st
 }
 
 func (s *userService) Login(ctx context.Context, email, password string) (dtos.LoginInfo, error) {
-	LoginInfo, err := transaction.StartTransaction[dtos.LoginInfo](ctx, &s.TxManager,
+	LoginInfo, err := transaction.StartTransaction(ctx, &s.TxManager,
 		func(qtx *store.Queries) (dtos.LoginInfo, error) {
 
 			userRepo := repo.NewUserRepo(qtx)
 			userSessionRepo := repo.NewUserSessionRepo(qtx)
 
-			user, err := findUserByEmail(ctx, email, userRepo)
+			user, sessionID, err := verifyUserAndCreateSession(ctx, email, password, userRepo, userSessionRepo)
 			if err != nil {
-				log.Println("email does not exists (service layer)")
-				return dtos.LoginInfo{}, err
-			}
-
-			log.Println("user found with email (service layer)")
-
-			log.Println(user.Password)
-
-			log.Println("RAW PASSWORD:", password)
-
-			hashed, _ := utils.HashPassword(password)
-			log.Println("HASHED PASSWORD:", hashed)
-
-			valid := utils.ComparePassword(user.Password, password)
-			log.Println(valid)
-			if !valid {
-				log.Println("invalid user (service layer)")
-				return dtos.LoginInfo{}, errs.ErrInvalidCredentails
-			}
-
-			log.Println("valid user (service layer)")
-
-			sessionID, err := createSession(ctx, user.PublicID, userSessionRepo)
-			if err != nil {
-				log.Println("error creating session (service layer)")
 				return dtos.LoginInfo{}, err
 			}
 
@@ -139,6 +114,42 @@ func (s *userService) Login(ctx context.Context, email, password string) (dtos.L
 	}
 
 	return LoginInfo, nil
+}
+
+func verifyUserAndCreateSession(ctx context.Context, email, password string, userRepo repo.UserRepo, userSessionRepo repo.UserSessionRepo) (*store.GetUserByEmailRow, uuid.UUID, error) {
+	user, err := isAuthenticUser(ctx, email, password, userRepo)
+	if err != nil {
+		log.Println("email does not exists (service layer)")
+		return nil, uuid.Nil, err
+	}
+
+	log.Println("valid user (service layer)")
+
+	sessionID, err := createSession(ctx, user.PublicID, userSessionRepo)
+	if err != nil {
+		log.Println("error creating session (service layer)")
+		return nil, uuid.Nil, err
+	}
+
+	return user, sessionID, nil
+}
+
+func isAuthenticUser(ctx context.Context, email, password string, userRepo repo.UserRepo) (*store.GetUserByEmailRow, error) {
+	user, err := findUserByEmail(ctx, email, userRepo)
+	if err != nil {
+		log.Println("email does not exists (service layer)")
+		return nil, err
+	}
+
+	log.Println("user found with email (service layer)")
+
+	valid := utils.ComparePassword(user.Password, password)
+	if !valid {
+		log.Println("invalid user (service layer)")
+		return nil, errs.ErrInvalidCredentails
+	}
+
+	return user, nil
 }
 
 func saveSessionAndGenerateTokens(ctx context.Context, userID uuid.UUID, userSessionRepo repo.UserSessionRepo) (*utils.Tokens, error) {
@@ -179,7 +190,6 @@ func findUserByEmail(ctx context.Context, email string, userRepo repo.UserRepo) 
 }
 
 func verifyAndSaveUser(ctx context.Context, userRepo repo.UserRepo, username, email, password string) (*store.CreateUserRow, error) {
-
 	_, err := findUserByEmail(ctx, email, userRepo)
 	if err == nil {
 		log.Println("email already exists (service layer)")
