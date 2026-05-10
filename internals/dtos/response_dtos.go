@@ -7,3 +7,9 @@ type RegisterInfo struct {
 	AccessToken  string
 	RefreshToken string
 }
+
+type LoginInfo struct {
+	User         *store.GetUserByEmailRow
+	AccessToken  string
+	RefreshToken string
+}

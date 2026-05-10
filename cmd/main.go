@@ -34,7 +34,7 @@ func main() {
 
 	userSessionRepo := repo.NewUserSessionRepo(queries)
 
-	txManager := transaction.NewTxManager[any](db)
+	txManager := transaction.NewTxManager(db)
 
 	userService := services.NewUserService(*txManager, userRepo, verificationCodeRepo, userSessionRepo)
 

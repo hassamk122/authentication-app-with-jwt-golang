@@ -7,17 +7,15 @@ import (
 	"github.com/hassamk122/authentication-app-with-jwt-golang/internals/store"
 )
 
-type TxManager[T any] struct {
+type TxManager struct {
 	Db *sql.DB
 }
 
-func NewTxManager[T any](db *sql.DB) *TxManager[T] {
-	return &TxManager[T]{
-		Db: db,
-	}
+func NewTxManager(db *sql.DB) *TxManager {
+	return &TxManager{Db: db}
 }
 
-func (tm *TxManager[T]) StartTransaction(ctx context.Context, fn func(*store.Queries) (T, error)) (res T, err error) {
+func StartTransaction[T any](ctx context.Context, tm *TxManager, fn func(*store.Queries) (T, error)) (res T, err error) {
 	tx, err := tm.Db.BeginTx(ctx, nil)
 	if err != nil {
 		return res, err

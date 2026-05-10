@@ -4,15 +4,13 @@ import (
 	"net/http"
 	"os"
 	"time"
-
-	"github.com/hassamk122/authentication-app-with-jwt-golang/internals/dtos"
 )
 
-func SetAuthCookies(res http.ResponseWriter, registerInfo dtos.RegisterInfo) {
+func SetAuthCookies(res http.ResponseWriter, accessToken, refreshToken string) {
 
 	accessTokenCookie := http.Cookie{
 		Name:     "access_token",
-		Value:    registerInfo.AccessToken,
+		Value:    accessToken,
 		Expires:  time.Now().Add(15 * time.Minute),
 		SameSite: http.SameSiteStrictMode,
 		HttpOnly: true,
@@ -23,7 +21,7 @@ func SetAuthCookies(res http.ResponseWriter, registerInfo dtos.RegisterInfo) {
 
 	refreshTokenCookie := http.Cookie{
 		Name:     "refresh_token",
-		Value:    registerInfo.RefreshToken,
+		Value:    refreshToken,
 		SameSite: http.SameSiteStrictMode,
 		Expires:  time.Now().AddDate(0, 1, 0),
 		HttpOnly: true,
