@@ -54,7 +54,7 @@ func (h *Handler) CreateUserHandler() http.HandlerFunc {
 
 		log.Println("Cookies set (handler layer)")
 
-		utils.RespondWithSuccess(res, http.StatusCreated, "User created successfully", registerInfo)
+		utils.RespondWithSuccess(res, http.StatusCreated, "User created successfully", registerInfo.(dtos.RegisterInfo).User)
 
 	}
 }

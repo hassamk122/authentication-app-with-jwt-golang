@@ -72,7 +72,7 @@ func (s *userService) Register(ctx context.Context, username, email, password st
 			return dtos.RegisterInfo{
 				User:         user,
 				RefreshToken: tokens.RefreshToken,
-				AccessToken:  tokens.RefreshToken,
+				AccessToken:  tokens.AccessToken,
 			}, err
 		})
 

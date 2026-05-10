@@ -1,0 +1,5 @@
+To generate secret
+openssl rand -base64 32
+
+To convert base64URL
+echo -n "SECRET" | tr '+' '-' | tr '/' '_' | tr -d '='

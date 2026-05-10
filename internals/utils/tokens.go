@@ -49,6 +49,8 @@ func GenerateTokens(sessionID uuid.UUID, userID uuid.UUID) (*Tokens, error) {
 }
 
 func generateAccessToken(user_id uuid.UUID, sessionId uuid.UUID, secretKey []byte) (string, error) {
+
+	log.Println("user id ,", user_id)
 	claims := AccessTokenClaims{
 		UserID:    user_id,
 		SessionId: sessionId,
@@ -57,6 +59,8 @@ func generateAccessToken(user_id uuid.UUID, sessionId uuid.UUID, secretKey []byt
 			Issuer:    "auth_server",
 		},
 	}
+
+	log.Println("access_token claims ", claims)
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
@@ -71,6 +75,8 @@ func generateRefreshToken(sessionId uuid.UUID, secretKey []byte) (string, error)
 			Issuer:    "auth_server",
 		},
 	}
+
+	log.Println("refresh_token claims ", claims)
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
