@@ -34,3 +34,13 @@ func (q *Queries) CreateUserSession(ctx context.Context, arg CreateUserSessionPa
 	)
 	return i, err
 }
+
+const deleteUserSession = `-- name: DeleteUserSession :exec
+DELETE FROM user_sessions
+WHERE id = $1
+`
+
+func (q *Queries) DeleteUserSession(ctx context.Context, id uuid.UUID) error {
+	_, err := q.exec(ctx, q.deleteUserSessionStmt, deleteUserSession, id)
+	return err
+}

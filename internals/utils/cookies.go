@@ -10,6 +10,7 @@ func SetAuthCookies(res http.ResponseWriter, accessToken, refreshToken string) {
 
 	accessTokenCookie := http.Cookie{
 		Name:     "access_token",
+		Path:     "/",
 		Value:    accessToken,
 		Expires:  time.Now().Add(15 * time.Minute),
 		SameSite: http.SameSiteStrictMode,
@@ -35,4 +36,33 @@ func SetAuthCookies(res http.ResponseWriter, accessToken, refreshToken string) {
 func ShouldBeSecure() bool {
 	env := os.Getenv("ENVIRONMENT")
 	return env != "DEV"
+}
+
+func ClearAuthCookies(res http.ResponseWriter) {
+
+	clearAccessTokenCookie := &http.Cookie{
+		Name:     "access_token",
+		Value:    "",
+		Path:     "/",
+		Expires:  time.Unix(0, 0),
+		MaxAge:   -1,
+		HttpOnly: true,
+		Secure:   ShouldBeSecure(),
+		SameSite: http.SameSiteStrictMode,
+	}
+
+	http.SetCookie(res, clearAccessTokenCookie)
+
+	clearRefreshTokenCookie := &http.Cookie{
+		Name:     "refresh_token",
+		Value:    "",
+		Path:     "/auth/refresh",
+		Expires:  time.Unix(0, 0),
+		MaxAge:   -1,
+		HttpOnly: true,
+		Secure:   ShouldBeSecure(),
+		SameSite: http.SameSiteStrictMode,
+	}
+
+	http.SetCookie(res, clearRefreshTokenCookie)
 }

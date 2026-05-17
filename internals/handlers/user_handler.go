@@ -101,3 +101,35 @@ func (h *Handler) LoginHandler() http.HandlerFunc {
 		utils.RespondWithSuccess(res, http.StatusOK, "Login Successful", nil)
 	}
 }
+
+func (h *Handler) LogoutHandler() http.HandlerFunc {
+	return func(res http.ResponseWriter, req *http.Request) {
+		ctx := req.Context()
+
+		accessToken, err := req.Cookie("access_token")
+		if err != nil {
+			switch {
+			case errors.Is(err, http.ErrNoCookie):
+				utils.RespondWithError(res, http.StatusBadRequest, "Cookie not found")
+			default:
+				log.Println(err)
+				utils.RespondWithError(res, http.StatusInternalServerError, "Server error")
+			}
+			return
+		}
+
+		claims, err := utils.ParseAccessToken(accessToken.Value, utils.GetSecretKey())
+		if err != nil {
+			utils.RespondWithError(res, http.StatusBadRequest, "Unauthorized request")
+		}
+
+		err = h.UserService.Logout(ctx, claims.SessionId)
+		if err != nil {
+			utils.RespondWithError(res, http.StatusBadRequest, "Session does not exist")
+		}
+
+		utils.ClearAuthCookies(res)
+
+		utils.RespondWithSuccess(res, http.StatusOK, "Logout Successful", nil)
+	}
+}

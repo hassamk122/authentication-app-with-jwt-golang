@@ -18,6 +18,7 @@ import (
 type UserService interface {
 	Register(ctx context.Context, username, email, password string) (dtos.RegisterInfo, error)
 	Login(ctx context.Context, email, password string) (dtos.LoginInfo, error)
+	Logout(ctx context.Context, sessionId uuid.UUID) error
 }
 
 type userService struct {
@@ -114,6 +115,25 @@ func (s *userService) Login(ctx context.Context, email, password string) (dtos.L
 	}
 
 	return LoginInfo, nil
+}
+
+func (s *userService) Logout(ctx context.Context, sessionId uuid.UUID) error {
+	_, err := transaction.StartTransaction(ctx, &s.TxManager,
+		func(qtx *store.Queries) (any, error) {
+			userSessionRepo := repo.NewUserSessionRepo(qtx)
+
+			err := userSessionRepo.DeleteUserSession(ctx, sessionId)
+			if err != nil {
+				return uuid.Nil, err
+			}
+
+			return uuid.Nil, nil
+		})
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func verifyUserAndCreateSession(ctx context.Context, email, password string, userRepo repo.UserRepo, userSessionRepo repo.UserSessionRepo) (*store.GetUserByEmailRow, uuid.UUID, error) {

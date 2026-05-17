@@ -25,6 +25,10 @@ type RefreshTokenClaims struct {
 	jwt.StandardClaims
 }
 
+func GetSecretKey() []byte {
+	return []byte(os.Getenv("JWT_SECRET_KEY"))
+}
+
 func GenerateTokens(sessionID uuid.UUID, userID uuid.UUID) (*Tokens, error) {
 
 	jwtKey := []byte(os.Getenv("JWT_SECRET_KEY"))
@@ -67,6 +71,22 @@ func generateAccessToken(user_id uuid.UUID, sessionId uuid.UUID, secretKey []byt
 	return token.SignedString(secretKey)
 }
 
+func ParseAccessToken(tokenString string, secretkey []byte) (*AccessTokenClaims, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &AccessTokenClaims{}, func(t *jwt.Token) (interface{}, error) {
+		return secretkey, nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	if claims, ok := token.Claims.(*AccessTokenClaims); ok && token.Valid {
+		return claims, nil
+	}
+
+	return nil, err
+}
+
 func generateRefreshToken(sessionId uuid.UUID, secretKey []byte) (string, error) {
 	claims := RefreshTokenClaims{
 		SessionId: sessionId,
@@ -81,4 +101,20 @@ func generateRefreshToken(sessionId uuid.UUID, secretKey []byte) (string, error)
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
 	return token.SignedString(secretKey)
+}
+
+func ParseRefreshToken(tokenString string, secretkey []byte) (*RefreshTokenClaims, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &RefreshTokenClaims{}, func(t *jwt.Token) (interface{}, error) {
+		return secretkey, nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	if claims, ok := token.Claims.(*RefreshTokenClaims); ok && token.Valid {
+		return claims, nil
+	}
+
+	return nil, err
 }
