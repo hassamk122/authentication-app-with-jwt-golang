@@ -118,14 +118,9 @@ func (h *Handler) LogoutHandler() http.HandlerFunc {
 			return
 		}
 
-		claims, err := utils.ParseAccessToken(accessToken.Value, utils.GetSecretKey())
+		err = h.UserService.Logout(ctx, accessToken)
 		if err != nil {
 			utils.RespondWithError(res, http.StatusBadRequest, "Unauthorized request")
-		}
-
-		err = h.UserService.Logout(ctx, claims.SessionId)
-		if err != nil {
-			utils.RespondWithError(res, http.StatusBadRequest, "Session does not exist")
 		}
 
 		utils.ClearAuthCookies(res)
