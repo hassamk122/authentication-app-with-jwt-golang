@@ -20,6 +20,7 @@ type UserService interface {
 	Register(ctx context.Context, username, email, password string) (dtos.RegisterInfo, error)
 	Login(ctx context.Context, email, password string) (dtos.LoginInfo, error)
 	Logout(ctx context.Context, accessToken *http.Cookie) error
+	Refresh(ctx context.Context, refreshToken *http.Cookie) error
 }
 
 type userService struct {
@@ -131,6 +132,40 @@ func (s *userService) Logout(ctx context.Context, accessToken *http.Cookie) erro
 	}
 
 	return nil
+}
+
+func (s *userService) Refresh(ctx context.Context, refreshToken *http.Cookie) error {
+	claims, err := utils.ParseRefreshToken(refreshToken.Value, utils.GetSecretKey())
+	if err != nil {
+		return err
+	}
+
+	now := time.Now()
+
+	session, err := s.userSessionRepo.FindSessionByID(ctx, claims.SessionId)
+	if err != nil {
+		return err
+	}
+
+	if session.ExpiresAt.Before(now) {
+		return errs.ErrSessionExpired
+	}
+
+	if sessionNeedsRefresh(session, now) {
+		session.ExpiresAt = time.Now().AddDate(0, 1, 0)
+		_, err := s.userSessionRepo.UpdateSessionExpiryDate(ctx, store.UpdateSessionParams{
+			ID:        session.ID,
+			ExpiresAt: session.ExpiresAt,
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+}
+
+func sessionNeedsRefresh(session store.UserSession, now time.Time) bool {
+	return session.ExpiresAt.Sub(now) <= 24*time.Hour
 }
 
 func verifyUserAndCreateSession(ctx context.Context, email, password string, userRepo repo.UserRepo, userSessionRepo repo.UserSessionRepo) (*store.GetUserByEmailRow, uuid.UUID, error) {

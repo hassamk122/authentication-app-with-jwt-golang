@@ -33,11 +33,17 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.deleteUserSessionStmt, err = db.PrepareContext(ctx, deleteUserSession); err != nil {
 		return nil, fmt.Errorf("error preparing query DeleteUserSession: %w", err)
 	}
+	if q.findByIdStmt, err = db.PrepareContext(ctx, findById); err != nil {
+		return nil, fmt.Errorf("error preparing query FindById: %w", err)
+	}
 	if q.getUserByEmailStmt, err = db.PrepareContext(ctx, getUserByEmail); err != nil {
 		return nil, fmt.Errorf("error preparing query GetUserByEmail: %w", err)
 	}
 	if q.saveVerificationCodeStmt, err = db.PrepareContext(ctx, saveVerificationCode); err != nil {
 		return nil, fmt.Errorf("error preparing query SaveVerificationCode: %w", err)
+	}
+	if q.updateSessionStmt, err = db.PrepareContext(ctx, updateSession); err != nil {
+		return nil, fmt.Errorf("error preparing query UpdateSession: %w", err)
 	}
 	return &q, nil
 }
@@ -59,6 +65,11 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing deleteUserSessionStmt: %w", cerr)
 		}
 	}
+	if q.findByIdStmt != nil {
+		if cerr := q.findByIdStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing findByIdStmt: %w", cerr)
+		}
+	}
 	if q.getUserByEmailStmt != nil {
 		if cerr := q.getUserByEmailStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing getUserByEmailStmt: %w", cerr)
@@ -67,6 +78,11 @@ func (q *Queries) Close() error {
 	if q.saveVerificationCodeStmt != nil {
 		if cerr := q.saveVerificationCodeStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing saveVerificationCodeStmt: %w", cerr)
+		}
+	}
+	if q.updateSessionStmt != nil {
+		if cerr := q.updateSessionStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing updateSessionStmt: %w", cerr)
 		}
 	}
 	return err
@@ -111,8 +127,10 @@ type Queries struct {
 	createUserStmt           *sql.Stmt
 	createUserSessionStmt    *sql.Stmt
 	deleteUserSessionStmt    *sql.Stmt
+	findByIdStmt             *sql.Stmt
 	getUserByEmailStmt       *sql.Stmt
 	saveVerificationCodeStmt *sql.Stmt
+	updateSessionStmt        *sql.Stmt
 }
 
 func (q *Queries) WithTx(tx *sql.Tx) *Queries {
@@ -122,7 +140,9 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		createUserStmt:           q.createUserStmt,
 		createUserSessionStmt:    q.createUserSessionStmt,
 		deleteUserSessionStmt:    q.deleteUserSessionStmt,
+		findByIdStmt:             q.findByIdStmt,
 		getUserByEmailStmt:       q.getUserByEmailStmt,
 		saveVerificationCodeStmt: q.saveVerificationCodeStmt,
+		updateSessionStmt:        q.updateSessionStmt,
 	}
 }

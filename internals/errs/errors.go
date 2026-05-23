@@ -6,4 +6,5 @@ var (
 	ErrEmailTaken            = errors.New("Email already taken")
 	ErrInvalidRequestPayload = errors.New("Invalid request payload")
 	ErrInvalidCredentails    = errors.New("Invalid credentials")
+	ErrSessionExpired        = errors.New("Session expired")
 )

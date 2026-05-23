@@ -102,6 +102,21 @@ func (h *Handler) LoginHandler() http.HandlerFunc {
 	}
 }
 
+func (h *Handler) RefreshHandler() http.HandlerFunc {
+	return func(res http.ResponseWriter, req *http.Request) {
+		ctx := req.Context()
+
+		refreshToken, err := req.Cookie("refresh_token")
+		if err != nil {
+			utils.RespondWithError(res, http.StatusBadRequest, "Missing refresh token")
+
+		}
+
+		//
+
+	}
+}
+
 func (h *Handler) LogoutHandler() http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
 		ctx := req.Context()

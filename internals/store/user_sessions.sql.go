@@ -44,3 +44,45 @@ func (q *Queries) DeleteUserSession(ctx context.Context, id uuid.UUID) error {
 	_, err := q.exec(ctx, q.deleteUserSessionStmt, deleteUserSession, id)
 	return err
 }
+
+const findById = `-- name: FindById :one
+SELECT id, user_id, created_at, expires_at
+FROM user_sessions
+WHERE id = $1
+`
+
+func (q *Queries) FindById(ctx context.Context, id uuid.UUID) (UserSession, error) {
+	row := q.queryRow(ctx, q.findByIdStmt, findById, id)
+	var i UserSession
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.CreatedAt,
+		&i.ExpiresAt,
+	)
+	return i, err
+}
+
+const updateSession = `-- name: UpdateSession :one
+UPDATE user_sessions
+SET expires_at = $1
+WHERE id = $2
+RETURNING id, user_id, created_at, expires_at
+`
+
+type UpdateSessionParams struct {
+	ExpiresAt time.Time `json:"expires_at"`
+	ID        uuid.UUID `json:"id"`
+}
+
+func (q *Queries) UpdateSession(ctx context.Context, arg UpdateSessionParams) (UserSession, error) {
+	row := q.queryRow(ctx, q.updateSessionStmt, updateSession, arg.ExpiresAt, arg.ID)
+	var i UserSession
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.CreatedAt,
+		&i.ExpiresAt,
+	)
+	return i, err
+}

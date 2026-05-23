@@ -10,6 +10,8 @@ import (
 type UserSessionRepo interface {
 	CreateUserSession(ctx context.Context, arg store.CreateUserSessionParams) (store.UserSession, error)
 	DeleteUserSession(ctx context.Context, id uuid.UUID) error
+	FindSessionByID(ctx context.Context, id uuid.UUID) (store.UserSession, error)
+	UpdateSessionExpiryDate(ctx context.Context, arg store.UpdateSessionParams) (store.UserSession, error)
 }
 
 type userSessionsRepo struct {
@@ -28,4 +30,11 @@ func (usr *userSessionsRepo) CreateUserSession(ctx context.Context, arg store.Cr
 
 func (usr *userSessionsRepo) DeleteUserSession(ctx context.Context, id uuid.UUID) error {
 	return usr.queries.DeleteUserSession(ctx, id)
+}
+
+func (usr *userSessionsRepo) FindSessionByID(ctx context.Context, id uuid.UUID) (store.UserSession, error) {
+	return usr.queries.FindById(ctx, id)
+}
+func (usr *userSessionsRepo) UpdateSessionExpiryDate(ctx context.Context, arg store.UpdateSessionParams) (store.UserSession, error) {
+	return usr.queries.UpdateSession(ctx, arg)
 }
