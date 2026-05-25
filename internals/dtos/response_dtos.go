@@ -13,3 +13,8 @@ type LoginInfo struct {
 	AccessToken  string
 	RefreshToken string
 }
+
+type RefreshInfo struct {
+	AccessToken  string
+	RefreshToken string
+}

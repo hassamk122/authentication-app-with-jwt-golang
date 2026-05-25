@@ -20,7 +20,7 @@ type UserService interface {
 	Register(ctx context.Context, username, email, password string) (dtos.RegisterInfo, error)
 	Login(ctx context.Context, email, password string) (dtos.LoginInfo, error)
 	Logout(ctx context.Context, accessToken *http.Cookie) error
-	Refresh(ctx context.Context, refreshToken *http.Cookie) error
+	Refresh(ctx context.Context, refreshToken *http.Cookie) (dtos.RefreshInfo, error)
 }
 
 type userService struct {
@@ -134,22 +134,25 @@ func (s *userService) Logout(ctx context.Context, accessToken *http.Cookie) erro
 	return nil
 }
 
-func (s *userService) Refresh(ctx context.Context, refreshToken *http.Cookie) error {
+func (s *userService) Refresh(ctx context.Context, refreshToken *http.Cookie) (dtos.RefreshInfo, error) {
+
 	claims, err := utils.ParseRefreshToken(refreshToken.Value, utils.GetSecretKey())
 	if err != nil {
-		return err
+		return dtos.RefreshInfo{}, err
 	}
 
 	now := time.Now()
 
 	session, err := s.userSessionRepo.FindSessionByID(ctx, claims.SessionId)
 	if err != nil {
-		return err
+		return dtos.RefreshInfo{}, err
 	}
 
 	if session.ExpiresAt.Before(now) {
-		return errs.ErrSessionExpired
+		return dtos.RefreshInfo{}, errs.ErrSessionExpired
 	}
+
+	currentRefreshToken := refreshToken.Value
 
 	if sessionNeedsRefresh(session, now) {
 		session.ExpiresAt = time.Now().AddDate(0, 1, 0)
@@ -158,10 +161,25 @@ func (s *userService) Refresh(ctx context.Context, refreshToken *http.Cookie) er
 			ExpiresAt: session.ExpiresAt,
 		})
 		if err != nil {
-			return err
+			return dtos.RefreshInfo{}, err
 		}
+
+		newRefreshToken, err := utils.GenerateRefreshToken(session.ID, utils.GetSecretKey())
+		if err != nil {
+			return dtos.RefreshInfo{}, err
+		}
+		currentRefreshToken = newRefreshToken
 	}
 
+	accessToken, err := utils.GenerateAccessToken(session.UserID, session.ID, utils.GetSecretKey())
+	if err != nil {
+		return dtos.RefreshInfo{}, err
+	}
+
+	return dtos.RefreshInfo{
+		RefreshToken: currentRefreshToken,
+		AccessToken:  accessToken,
+	}, nil
 }
 
 func sessionNeedsRefresh(session store.UserSession, now time.Time) bool {

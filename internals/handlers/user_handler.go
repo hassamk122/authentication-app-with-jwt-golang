@@ -106,13 +106,31 @@ func (h *Handler) RefreshHandler() http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
 		ctx := req.Context()
 
+		log.Println("Request reached handler")
+
 		refreshToken, err := req.Cookie("refresh_token")
 		if err != nil {
 			utils.RespondWithError(res, http.StatusBadRequest, "Missing refresh token")
-
+			utils.ClearAuthCookies(res)
+			return
 		}
 
-		//
+		log.Println("Refresh token accessed")
+
+		tokens, err := h.UserService.Refresh(ctx, refreshToken)
+		if err != nil {
+			utils.RespondWithError(res, http.StatusBadRequest, err.Error())
+			utils.ClearAuthCookies(res)
+			return
+		}
+
+		log.Println("No errors found in refresh service (handler layer)")
+
+		utils.SetAuthCookies(res, tokens.AccessToken, tokens.RefreshToken)
+
+		log.Println("Cookies set (handler layer)")
+
+		utils.RespondWithSuccess(res, http.StatusOK, "Access tokens refreshed", nil)
 
 	}
 }

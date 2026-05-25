@@ -33,12 +33,12 @@ func GenerateTokens(sessionID uuid.UUID, userID uuid.UUID) (*Tokens, error) {
 
 	jwtKey := []byte(os.Getenv("JWT_SECRET_KEY"))
 
-	refreshToken, err := generateRefreshToken(sessionID, jwtKey)
+	refreshToken, err := GenerateRefreshToken(sessionID, jwtKey)
 	if err != nil {
 		return nil, err
 	}
 
-	accessToken, err := generateAccessToken(userID, sessionID, jwtKey)
+	accessToken, err := GenerateAccessToken(userID, sessionID, jwtKey)
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +52,7 @@ func GenerateTokens(sessionID uuid.UUID, userID uuid.UUID) (*Tokens, error) {
 
 }
 
-func generateAccessToken(user_id uuid.UUID, sessionId uuid.UUID, secretKey []byte) (string, error) {
+func GenerateAccessToken(user_id uuid.UUID, sessionId uuid.UUID, secretKey []byte) (string, error) {
 
 	log.Println("user id ,", user_id)
 	claims := AccessTokenClaims{
@@ -87,7 +87,7 @@ func ParseAccessToken(tokenString string, secretkey []byte) (*AccessTokenClaims,
 	return nil, err
 }
 
-func generateRefreshToken(sessionId uuid.UUID, secretKey []byte) (string, error) {
+func GenerateRefreshToken(sessionId uuid.UUID, secretKey []byte) (string, error) {
 	claims := RefreshTokenClaims{
 		SessionId: sessionId,
 		StandardClaims: jwt.StandardClaims{
