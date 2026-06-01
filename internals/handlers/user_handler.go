@@ -161,3 +161,11 @@ func (h *Handler) LogoutHandler() http.HandlerFunc {
 		utils.RespondWithSuccess(res, http.StatusOK, "Logout Successful", nil)
 	}
 }
+
+func (h *Handler) VerifyEmailHandler() http.HandlerFunc {
+	return func(res http.ResponseWriter, req *http.Request) {
+		verificationCode := req.PathValue("code")
+
+		log.Println(verificationCode)
+	}
+}
